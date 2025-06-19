@@ -40,11 +40,11 @@ The Stacking.py script might give some warnings about deprecation of some packag
 
 NOTE: This script uses the the second and third chain to calculate how the third chain needs to translate and rotate to fit 'best' onto the forth chain ('best' because we now use the rmsd of the alpha carbons as metric for the fitting, but there is no real evidence this is the best metric). With the translation and rotation of one chain onto another, you can stack as many as you want.
 
-3)
+### Step 3)
 The multiple_stacked_chains.pdb needs to be moved/copied to the init directory (the init directory is located inside the copied template; 2beg_stacking)
 Move or copy the file (e.g. mv rot_trans_fitting/multiple_stacked_chains.pdb 2beg_stacking/init/)
 
-4)
+### Step 4)
 Make sure you work in the copied template directory (2beg_stacking)
 Navigate to the itps folder (cd itps) here you will generate all the additional itp files with martinize2.
 
@@ -62,18 +62,18 @@ Namely, go_nbparams.itp, go_atomtypes.itp and molecule_0.itp
 The molecule_0.itp describes one of the fibrils (beads, bonds, angles, etc.). There are also many virtual sites added to all the backbone beads, these are the beads that form the go-bonds.
 And these virtual sites are not defined in the forcefield, thus are defined in the go_atomtypes.itp. The specific go-bonds are defined in go_nbparams.itp.
 
-5)
+### Step 5)
 martinize2 does not automatically generate correct topology files. The amount of molecules are not correct and not all itps are referenced or referenced correctly. Thus we need to patch the topol.top.
 You should navigate to the copied template directory (2beg_stacking). Here you can run the python script patch_topol.py: python3 patch_topol.py molecule_0 26
 molecule_0 is the name of one fibril (defined in molecule_0.itp) and 26 is the amount of fibrils in our system.
 
-6)
+### Step 6)
 Before we can run the simulation we should convert the output from martinize2 to a gro-file, head over to the init folder (cd init). 
 Here you will find martinize.pdb which we can convert to martinize.gro with: gmx editconf -f init/martinized.pdb -o init/martinized.gro -box 20 20 20
 
 The box we simulate is 20 by 20 by 20 nm
 
-7)
+### Step 7)
 Now you are set to run script.sh in your folder (2beg_stacking)
 so navigate to the folder, then run the script (bash script.sh)
 
