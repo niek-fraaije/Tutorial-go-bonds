@@ -10,15 +10,15 @@ Something like an intro to go bonds and 2beg...
 
 
 ## -- Setup for martinize2 --
-Before we start we need to make sure that the new martinize2 script can be called.
-So we need to install martinize2 from the github page:
-pip install git+https://github.com/niek-fraaije/vermouth-martinize.git@go-implementation
+Before we start we need to make sure that the new martinize2 script can be called.  
+So we need to install martinize2 from another github page:  
+pip install git+https://github.com/niek-fraaije/vermouth-martinize.git@go-implementation  
 If you want you can check the installation with: which martinize2
 
 Other dependencies:
-mdtraj
-MDAnalysis (version 2.8.0)
-Gromacs version: 2024.4
+mdtraj  
+MDAnalysis (version 2.8.0)  
+Gromacs version: 2024.4  
 
 NOTE: It is advised to work in a virtual environment (pyhton=3.12)
 
