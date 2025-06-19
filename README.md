@@ -9,7 +9,7 @@ Something like an intro to go bonds and 2beg...
 
 
 
--- Setup for martinize2 --
+## -- Setup for martinize2 --
 Before we start we need to make sure that the new martinize2 script can be called.
 So we need to install martinize2 from the github page:
 pip install git+https://github.com/niek-fraaije/vermouth-martinize.git@go-implementation
@@ -23,12 +23,12 @@ Gromacs version: 2024.4
 NOTE: It is advised to work in a virtual environment (pyhton=3.12)
 
 
--- Tutorial --
-1)
+## -- Tutorial --
+### Step 1)
 First we need to set up our experiment.
 So we need to copy our template folder, (e.g. cp -r template/ ./2beg_stacking)
 
-2)
+### step 2)
 Head over to the rot_trans_fitting directory (cd rot_trans_fitting)
 You will find two files here, 2beg.pdb and Stacking.py
 2beg.pdb is the first NMR model of the 2BEG entry in the PDB database
