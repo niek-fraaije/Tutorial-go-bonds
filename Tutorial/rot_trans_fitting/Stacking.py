@@ -4,85 +4,60 @@
 # # Rotation and translation fitting of Amyloid-B
 
 import MDAnalysis as mda
-from MDAnalysis import transformations
-from MDAnalysis.analysis.align import rotation_matrix
+from MDAnalysis.analysis import align
 from MDAnalysis.core.universe import Merge
 import numpy as np
-from copy import deepcopy
-import string
-
 
 raw_structure_path = '2beg.pdb'
 universe = mda.Universe(raw_structure_path)
 
-center_universe = universe.segments[2:4]
-chainA = universe.segments[2].atoms
-chainB = universe.segments[3].atoms
+# Extract atoms
+atomsA = universe.segments[2].atoms
+atomsB = universe.segments[3].atoms
 
-# Write the first chain we use in the stacking, so we can 
-chainA.write('chainA.pdb')
+# Get positions and center
+posA = atomsA.positions - atomsA.center_of_mass()
+posB = atomsB.positions - atomsB.center_of_mass()
 
-# Only using the C-alphas for fitting
-ref_atoms = chainB.select_atoms('protein and name CA').positions
-mob_atoms = chainA.select_atoms('protein and name CA').positions
+# Compute rotation matrix R to align A to B
+R, rmsd = align.rotation_matrix(posA, posB)
+T = atomsB.center_of_mass() - atomsA.center_of_mass()  # translation A → B
 
-# Get the center of mass coordinates
-ref_COG = np.mean(ref_atoms, axis=0)
-mob_COG = np.mean(mob_atoms, axis=0)
+# Prepare list of positions
+positions = []
+n_copies = 26
 
-# Get coordinates and rebase the center of mass to 0,0,0
-ref_origin = ref_atoms - ref_COG
-mob_origin = mob_atoms - mob_COG
+# Initialize with chainA positions
+current_pos = atomsA.positions.copy()
+current_com = atomsA.center_of_mass()
+positions.append(current_pos)
 
-# Compute the rotation matrix and RMSD (rotation around COM leaves COM unchanged)
-R, rmsd = rotation_matrix(mob_origin, ref_origin)
+for _ in range(1, n_copies):
+    # Apply rotation and translation
+    rotated = np.dot(current_pos - current_com, R.T)
+    new_com = current_com + T
+    new_pos = rotated + new_com
 
-# Returns the fitted positions for only the CA
-mob_aligned = (mob_atoms - mob_COG) @ R + ref_COG
+    positions.append(new_pos)
+    current_pos = new_pos
+    current_com = new_com
 
-# Better yet is to generate a new empty universe in memory without passing by the HD
-new_chain = mda.Universe('chainA.pdb').atoms 
-# Apply the rot+trans operation to the new copy
-new_chain.positions = (chainA.positions - mob_COG) @ R + ref_COG # All atoms from chainA projected on chainB
+# --- Build a new Universe with all 26 chains ---
 
+# Create one merged topology from chainA * 26
 
-# Combine the original A with the new_chain to use as a SnakeOil template
+stacked = Merge(*[atomsA.copy() for _ in range(n_copies)])
 
-# THIS IS NASTY AND WE LIKE IT THAT WAY!
-# Set segment names
-#chainA.segments.segids = ['A'] 
-#new_chain.segments.segids = ['B']
-
-# Set the chainIDs correctly, martinize depends on this!
-# chainA.chainIDs = ['A'] * len(chainA.atoms)
-# new_chain.chainIDs = ['B'] * len(chainA.atoms)
-# combined_universe = Merge(chainA, new_chain)
-# combined_universe.atoms.write('stacked_chains.pdb')
+# Set positions
+for i, coords in enumerate(positions):
+    stacked.segments[i].atoms.positions = coords
+    # Set chainID (e.g., A, B, ..., Z, AA, AB, ...)
+    if i < 26:
+        chain_id = chr(65 + i)  # A–Z
+    else:
+        chain_id = chr(65 + (i // 26) - 1) + chr(65 + (i % 26))  # AA, AB, ...
+    stacked.segments[i].atoms.chainIDs = chain_id
 
 
-# Make a fiber with 26 (all letters of the alphabet as chains) monomers stacked ontop of eachother, where the stacking is based on the R (rotation matrix)
-# and based on the translation matricces (ref_COG, mob_COG)
-
-alphabet = list(string.ascii_uppercase)
-
-initial_chain = mda.Universe('chainA.pdb').atoms 
-chainA.chainIDs = ['A'] * len(chainA.atoms)
-old_chain = None
-
-for index, chainid in enumerate(alphabet):
-    if index == 0:
-        old_chain = initial_chain
-        old_chain.chainIDs = [chainid] * len(chainA.atoms)
-    elif index < 26:
-        new_chain = mda.Universe('chainA.pdb').atoms 
-        new_chain.positions = (old_chain.positions - mob_COG) @ R + ref_COG
-        new_chain.chainIDs = [chainid] * len(chainA.atoms)
-        if index == 1:
-            combined_universe = Merge(chainA, new_chain)
-            combined_universe.atoms.write('multiple_stacked_chains.pdb')
-            old_chain = new_chain
-        else:
-            combined_universe = Merge(combined_universe.atoms, new_chain)
-            combined_universe.atoms.write('multiple_stacked_chains.pdb')
-            old_chain = new_chain
-
+# --- Write output ---
+stacked.atoms.write("multiple_stacked_chains.pdb")
